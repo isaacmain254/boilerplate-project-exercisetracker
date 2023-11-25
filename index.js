@@ -17,7 +17,13 @@ mongoose.connect(process.env.MONGO_URI, {
 });
 
 const userSchema = new mongoose.Schema({
-  username: String
+  username: String,
+  exercises: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Exercise",
+    },
+  ],
 });
 const exerciseSchema = new mongoose.Schema({
   userId: String,
@@ -57,38 +63,32 @@ app.get('/api/users', (req, res) => {
 });
 
 
-app.post('/api/users/:_id/exercises', async(req, res) => {
-  const userId = req.params._id
-  const description = req.body.description
-  const duration = req.body.duration
-  const date = req.body.date ? new Date(req.body.date) : new Date()
+app.post("/api/users/:_id/exercises", async (req, res) => {
+  const { _id } = req.params;
+  const { description, duration, date } = req.body;
 
-  // get user whose _id matches userId
-  const user = await User.findById(userId).exec()
-  console.log(user)
-  if (!user) {
-    return res.status(400).json({ error: "User not found" });
-  }
+  try {
+    const user = await User.findById(_id);
+    const exercise = new Exercise({
+      userId: user._id,
+      description,
+      duration,
+      date: new Date(date),
+    });
 
+    const savedExercise = await exercise.save();
 
-  const newExercise = new Exercise({ 
-    userId: user._id,
-    description,
-     duration,
-      date
-     })
-  newExercise.save().then((savedExercise) => {
     res.json({
       username: user.username,
       description: savedExercise.description,
       duration: savedExercise.duration,
       date: savedExercise.date.toDateString(),
-      _id: savedExercise._id,
+      _id: user._id,
     });
-  }).catch((err) => {
+  } catch (err) {
     res.json({ error: err.message });
-  });
-})
+  }
+});
 
 app.get('/api/users/:_id/logs', async(req, res) => {
   const {_id} = req.params;
@@ -108,7 +108,7 @@ app.get('/api/users/:_id/logs', async(req, res) => {
       query = query.limit(parseInt(limit));
     }
     const excerises = await query.exec();
-    
+
     const response ={
       username: user.username,
       count: excerises.length,
