@@ -5,9 +5,9 @@ require('dotenv').config()
 const bodyParser = require('body-parser')
 const mongoose = require('mongoose')
 
-app.use(bodyParser.urlencoded({ extended: false }))
 app.use(cors())
 app.use(express.static('public'))
+app.use(bodyParser.urlencoded({ extended: false }))
 
 // MongoDB connection
 const port = process.env.PORT || 3000;
@@ -17,18 +17,30 @@ mongoose.connect(process.env.MONGO_URI, {
 });
 
 const userSchema = new mongoose.Schema({
-  username: String,
-  exercises: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Exercise",
-    },
-  ],
+  username: {
+    type: String,
+    require: [true, 'Username must be provided'],
+    unique: true
+  },
+
 });
 const exerciseSchema = new mongoose.Schema({
-  userId: String,
-  description: String,
-  duration: Number,
+  userId: {
+    type: String,
+    require: [true, 'User ID must be provided'],
+  },
+  username: {
+    type: String,
+    require: [true, 'Username must be provided'],
+  },
+  description:{
+    type: String,
+    require: [true, 'Description must be provided'],
+  },
+  duration: {
+    type: Number,
+    require: [true, 'Duration must be provided'],
+  },
   date: Date
 });
 const User = mongoose.model('User', userSchema);
@@ -85,30 +97,6 @@ app.post("/api/users/:_id/exercises", async (req, res) => {
       date: savedExercise.date.toDateString(),
       _id: user._id,
     });
-  } catch (err) {
-    res.json({ error: err.message });
-  }
-});
-
-app.get("/api/users/:_id/logs", async (req, res) => {
-  const { _id } = req.params;
-
-  try {
-    const user = await User.findById(_id);
-    const exercises = await Exercise.find({ userId: _id });
-
-    const response = {
-      username: user.username,
-      count: exercises.length,
-      _id: user._id,
-      log: exercises.map((exercise) => ({
-        description: exercise.description,
-        duration: exercise.duration,
-        date: exercise.date.toDateString(),
-      })),
-    };
-
-    res.json(response);
   } catch (err) {
     res.json({ error: err.message });
   }
