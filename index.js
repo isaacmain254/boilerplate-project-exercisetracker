@@ -108,6 +108,10 @@ app.get('/api/users/:_id/logs', async(req, res) => {
 
   try{
     const user = await User.findById(_id)
+    console.log(user)
+    if(!user){
+      return res.status(404).json({ error: "User not found" });
+    }
     let query = Exercise.find({userId: _id});
 
     if(from){
@@ -122,13 +126,13 @@ app.get('/api/users/:_id/logs', async(req, res) => {
     const excerises = await query.exec();
 
     const response ={
-      username: user.username,
-      count: excerises.length,
-      _id: user._id,
-      log: excerises.map((exercise) => ({
-        description: exercise.description.toString(),
-        duration: exercise.duration,
-        date: exercise.date.toDateString(),
+      "username": user.username,
+      "count": excerises.length,
+      "_id": user._id,
+      "log": excerises.map((exercise) => ({
+        "description": exercise.description,
+        "duration": exercise.duration,
+        "date": exercise.date.toDateString(),
       })),
     }
     res.json(response);
