@@ -90,6 +90,30 @@ app.post("/api/users/:_id/exercises", async (req, res) => {
   }
 });
 
+app.get("/api/users/:_id/logs", async (req, res) => {
+  const { _id } = req.params;
+
+  try {
+    const user = await User.findById(_id);
+    const exercises = await Exercise.find({ userId: _id });
+
+    const response = {
+      username: user.username,
+      count: exercises.length,
+      _id: user._id,
+      log: exercises.map((exercise) => ({
+        description: exercise.description,
+        duration: exercise.duration,
+        date: exercise.date.toDateString(),
+      })),
+    };
+
+    res.json(response);
+  } catch (err) {
+    res.json({ error: err.message });
+  }
+});
+
 app.get('/api/users/:_id/logs', async(req, res) => {
   const {_id} = req.params;
   const {from, to, limit} = req.query;
