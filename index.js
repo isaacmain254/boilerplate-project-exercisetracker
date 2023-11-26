@@ -22,7 +22,10 @@ const userSchema = new mongoose.Schema({
     require: [true, 'Username must be provided'],
     unique: true
   },
-
+  excercises: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Exercise'
+  }],  
 });
 const exerciseSchema = new mongoose.Schema({
   userId: {
@@ -102,42 +105,43 @@ app.post("/api/users/:_id/exercises", async (req, res) => {
   }
 });
 
-app.get('/api/users/:_id/logs', async(req, res) => {
-  const {_id} = req.params;
-  const {from, to, limit} = req.query;
 
-  try{
-    const user = await User.findById(_id)
-    console.log(user)
-    if(!user){
+app.get("/api/users/:_id/logs", async (req, res) => {
+  const { _id } = req.params;
+  const { from, to, limit } = req.query;
+
+  try {
+    const user = await User.findById(_id);
+    if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
-    let query = Exercise.find({userId: _id});
+    let query = Exercise.find({ userId: _id });
 
-    if(from){
-      query = query.where('date').gte(from);
+    if (from) {
+      query = query.where("date").gte(from);
     }
-    if(to){
-      query = query.where('date').lte(to);
+    if (to) {
+      query = query.where("date").lte(to);
     }
-    if(limit){
+    if (limit) {
       query = query.limit(parseInt(limit));
     }
     const excerises = await query.exec();
 
-    const response ={
-      "username": user.username,
-      "count": excerises.length,
-      "_id": user._id,
-      "log": excerises.map((exercise) => ({
-        "description": exercise.description,
-        "duration": exercise.duration,
-        "date": exercise.date.toDateString(),
-      })),
-    }
-    res.json(response);
-  }catch(err){
-    res.json({error: err.message})
+    let userLogs = excerises.map((exercise) => ({
+      description: exercise.description,
+      duration: exercise.duration,
+      date: exercise.date.toDateString(),
+    }));  
+
+    res.json({
+      username: user.username,
+      count: userLogs.length,
+      _id: user._id,
+      log: userLogs,
+    });
+  } catch (err) {
+    res.json({ error: err.message });
   }
 });
 
