@@ -19,9 +19,16 @@ mongoose.connect(process.env.MONGO_URI, {
 const userSchema = new mongoose.Schema({
   username: {
     type: String,
-    require: [true, 'Username must be provided'],
-    unique: true
-  }, 
+    require: [true, "Username must be provided"],
+    unique: true,
+  },
+  exercises: [
+    {
+      description: String,
+      duration: Number,
+      date: Date,
+    },
+  ]
 });
 const exerciseSchema = new mongoose.Schema({
   userId: {
@@ -80,26 +87,55 @@ app.post("/api/users/:_id/exercises", async (req, res) => {
 
   try {
     const user = await User.findById(_id);
-    const exercise = new Exercise({
-      userId: user._id,
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const exercise = {
       description,
       duration,
       date: new Date(date),
-    });
+    };
 
-    const savedExercise = await exercise.save();
+    user.exercises.push(exercise);
+    await user.save();
 
     res.json({
       username: user.username,
-      description: savedExercise.description,
-      duration: savedExercise.duration,
-      date: savedExercise.date.toDateString(),
       _id: user._id,
+      exercises: user.exercises,
     });
   } catch (err) {
     res.json({ error: err.message });
   }
 });
+
+// app.post("/api/users/:_id/exercises", async (req, res) => {
+//   const { _id } = req.params;
+//   const { description, duration, date } = req.body;
+
+//   try {
+//     const user = await User.findById(_id);
+//     const exercise = new Exercise({
+//       userId: user._id,
+//       description,
+//       duration,
+//       date: new Date(date),
+//     });
+
+//     const savedExercise = await exercise.save();
+
+//     res.json({
+//       username: user.username,
+//       description: savedExercise.description,
+//       duration: savedExercise.duration,
+//       date: savedExercise.date.toDateString(),
+//       _id: user._id,
+//     });
+//   } catch (err) {
+//     res.json({ error: err.message });
+//   }
+// });
 
 
 app.get("/api/users/:_id/logs", async (req, res) => {
