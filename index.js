@@ -21,11 +21,7 @@ const userSchema = new mongoose.Schema({
     type: String,
     require: [true, 'Username must be provided'],
     unique: true
-  },
-  excercises: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Exercise'
-  }],  
+  }, 
 });
 const exerciseSchema = new mongoose.Schema({
   userId: {
